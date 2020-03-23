@@ -5,6 +5,7 @@ const Mqtt = require('mqtt');
 const Lgtv = require('lgtv2');
 const config = require('./config.js');
 const pkg = require('./package.json');
+const URI = require("uri-js");
 
 let mqttConnected;
 let tvConnected;
@@ -15,7 +16,13 @@ log.setLevel(config.verbosity);
 log.info(pkg.name + ' ' + pkg.version + ' starting');
 log.info('mqtt trying to connect', config.url);
 
-const mqtt = Mqtt.connect(config.url, {will: {topic: config.name + '/connected', payload: '0', retain: true}});
+const parsedURI = URI.parse(config.url);
+log.info('parsed URI', parsedURI);
+
+const username = parsedURI.userinfo ? parsedURI.userinfo.split(":")[0] : undefined;
+const password = parsedURI.userinfo ? parsedURI.userinfo.split(":")[1] : undefined;
+
+const mqtt = Mqtt.connect(parsedURI.scheme + "://" + parsedURI.host, {username: username, password: password, will: {topic: config.name + '/connected', payload: '0', retain: true}});
 
 const lgtv = new Lgtv({
     url: 'ws://' + config.tv + ':3000'
